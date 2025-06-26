@@ -6,7 +6,7 @@ It contains all of the ICF tricks, with scores according to the updated 2025 ICF
 Make sure that if you include a trick with a bonus, you tick both boxes (of the trick in the desired direction, and the box with the clean/super clean/heli bonus). 
 It will tally up the score below, and you get an overview of the ride to see what was performed.
 
-NB: Yes, I am aware that the 'heli' bonus does not count for non-vertical tricks, but for unofficial meets this does sometimes score, so it was kept in.
+UPDATE 26/06/2025: After some suggestions by fellow paddlers, the UI and logic was improved to be more ICF-compliant and, well, more logical. See the update history in the .html file...
 
 I hope this is useful for anyone out there. 
 
