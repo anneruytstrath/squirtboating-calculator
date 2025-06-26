@@ -1,34 +1,67 @@
+<!--2025, Author: Anne Ruyters, department of Civil and Environmental Engineering, University of Strathclyde -->
+<!--An App for Calculating Squirtboating Ride scores for athletes and judges -->
+<!--Version: 1.2, 26/06/2025
+	Changes:
+	*Improved Heli Bonus Scoring - now in line with ICF Rules
+	*Improved Mystery Score Applicability -now in line with ICF Rules
+	*Sub-tables for improved and more intuitive scoring readability
+    *A refresh Button
+    *Inclusion of the Loop (the trick)
+    *Improved mobile handling
+	*Text Updates -->
+	
 <!DOCTYPE html>
-<!-- Author: Anne Ruyters, Department of Civil and Environmental Engineering, University of Strathclyde -->
-<!-- Version: 1.0, ready for testing -->
-<!-- A squirtboating ride calculator -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Squirtboating Ride Calculator (ICF 2025)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  
+<!--Style Guide for Mobile version using CSS, suggested by ChatGPT --> 
+<style>
+  @media (max-width: 640px) {
+  body {
+    font-size: 18px;      /* bigger base font */
+    line-height: 1.5;     /* more readable line spacing */
+    padding: 1rem;        /* extra padding around content */
+  }
+  
+  table {
+    font-size: 1rem;      /* increase table font size */
+  }
+  
+  input, select, button {
+    font-size: 1rem;      /* bigger form controls */
+    padding: 0.5rem;      /* more padding for easier tap */
+  }
+  
+  #summaryList {
+    font-size: 1rem;      /* bigger summary text */
+  }
+}
+</style>
 </head>
 
-<!--Body of the Application-->
+<!-- Body Section of the Application-->
 <body class="bg-gradient-to-br from-blue-50 to-white text-gray-900 font-sans p-6">
   <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2">
       <i class="fa-solid fa-water text-blue-500"></i>
       Squirtboating Ride Calculator (ICF 2025)
     </h1>
-	<h2 class="text-md font-semibold mb-6 text-center"> A tool for paddlers and judges to calculate ride scores for squirtboating. NOTE: make sure that the base value boxes (Direction 1/Direction 2) are ticked AS WELL AS the bonus boxes in case a bonus applies.
+    <h2 class="text-md font-semibold mb-8 text-center gap-2"> A tool for paddlers and judges to calculate ride scores for squirtboating. NOTE: make sure that the base value boxes (Direction 1/Direction 2) are ticked AS WELL AS the bonus boxes in case a bonus applies. Always make sure to double-check the 'Selected Tricks Summary' below.
+    </h2>
 
     <form id="rideForm" class="space-y-8">
-      
-	  <!-- Table -->
+      <!-- Table -->
       <div class="overflow-x-auto">
         <table class="min-w-full table-auto border border-gray-300 bg-white shadow rounded-lg">
           <thead class="bg-gray-100 text-sm text-gray-700">
             <tr>
               <th class="p-2 border">Trick</th>
-              <th class="p-2 border">Direction 1<br><span class="text-xs">(left/stern/up)</span></th>
-              <th class="p-2 border">Direction 2<br><span class="text-xs">(right/bow/down)</span></th>
+              <th class="p-2 border">Left<br><span class="text-xs">(or stern/up)</span></th>
+              <th class="p-2 border">Right<br><span class="text-xs">(or bow/down)</span></th>
               <th class="p-2 border">Clean</th>
               <th class="p-2 border">Superclean</th>
               <th class="p-2 border">Heli Bonus</th>
@@ -45,9 +78,9 @@
         <select id="mysteryMultiplier" class="border border-gray-300 rounded px-3 py-2 w-full max-w-xs"></select>
       </div>
 
-      <!-- Mystery Move Durations -->
+      <!-- Mystery Durations -->
       <div class="space-y-2">
-        <label class="font-medium">Mystery/Mush Submersion Durations (seconds)</label><br />
+        <label class="font-medium">Mystery/Mush Submersion Durations (Seconds). Press Enter to Update Score.</label><br />
         <div class="flex flex-wrap gap-2">
           <input type="number" id="mysterySeconds1" placeholder="Attempt 1 e.g. 4.2" class="border border-gray-300 rounded px-3 py-2 w-40" min="0" step="0.1">
           <input type="number" id="mysterySeconds2" placeholder="Attempt 2 e.g. 3.7" class="border border-gray-300 rounded px-3 py-2 w-40" min="0" step="0.1">
@@ -62,148 +95,199 @@
         <p class="bg-white border p-3 rounded shadow">Final Score: <span id="finalScore">0</span></p>
       </div>
 
-      <!-- Summary Panel -->
+      <!-- Summary -->
       <div class="bg-white p-4 border rounded shadow">
-        <h2 class="text-lg font-semibold mb-2"> Selected Tricks Summary:</h2>
+        <h2 class="text-lg font-semibold mb-2">Selected Tricks Summary:</h2>
         <ul id="summaryList" class="list-disc pl-6 text-sm space-y-1 text-gray-700"></ul>
+      </div>
+
+      <!-- Reset Button -->
+      <div class="text-center">
+        <button type="button" onclick="resetForm()" class="mt-4 px-6 py-2 bg-red-500 text-white rounded shadow hover:bg-red-600 transition">Reset Form</button>
       </div>
     </form>
   </div>
 
-  <!-- JavaScript Logic -->
-  <script>
-    //All the tricks in the book
-	const tricks = [
-      { name: "Spin", value: 5, clean: true, direction: "both" },
-      { name: "Stall", value: 10, clean: true, direction: "both" },
-      { name: "Bow Pirouette", value: 15, clean: false, direction: "both" },
-      { name: "Stern Pirouette", value: 20, clean: false, direction: "both" },
-      { name: "Change of Direction", value: 10, clean: true, direction: "both" },
-      { name: "Cartwheel", value: 25, clean: true, direction: "both" },
-      { name: "Switchwheel", value: 50, clean: false, direction: "both" },
-      { name: "Bow Screw", value: 20, clean: true, direction: "both" },
-      { name: "Stern Screw", value: 20, clean: true, direction: "both" },
-      { name: "Washout", value: 40, clean: true, direction: "both" },
-      { name: "Party Trick", value: 30, clean: false, direction: "both" },
-      { name: "Zero to Hero", value: 40, clean: false, direction: "both" },
-      { name: "One-Armed Bandit", value: 35, clean: true, direction: "both" },
-      { name: "Split Wheel", value: 50, clean: true, direction: "both" },
-      { name: "Tricky-Woo", value: 80, clean: true, direction: "both" },
-      { name: "Woo-Tricky", value: 80, clean: true, direction: "both" },
-      { name: "Screwing Around", value: 100, clean: true, direction: "both" },
-      { name: "Changing Around", value: 120, clean: false, direction: "both" },
-      { name: "Trophy 1", value: 50, clean: false, direction: "both" },
-      { name: "Trophy 2", value: 90, clean: false, direction: "both" },
-      { name: "Trophy 3", value: 120, clean: false, direction: "both" },
-      { name: "Mystery Exit 1", value: 20, clean: false, direction: "both" },
-      { name: "Mystery Exit 2", value: 40, clean: false, direction: "both" },
-      { name: "Mystery Exit 3", value: 90, clean: false, direction: "both" }
-    ];
+  <!-- JavaScript -->
+<script>
+  const tricks = [
+    { name: "Spin", value: 5, clean: true, direction: "both", heli: false, category: "Basic" },
+    { name: "Stall", value: 10, clean: true, direction: "both", heli: true, category: "Basic" },
+    { name: "Bow Pirouette", value: 15, clean: false, direction: "both", heli: false, category: "Basic" },
+    { name: "Stern Pirouette", value: 20, clean: false, direction: "both", heli: false, category: "Basic" },
+    { name: "Change of Direction", value: 10, clean: true, direction: "both", heli: true, category: "Basic" },
+    { name: "Cartwheel", value: 25, clean: true, direction: "both", heli: true, category: "Basic" },
 
-	//Mystery Depths
-    const depthDescription = val => ({
-      "1.0": "No Mystery", "1.2": "Full boat under", "1.4": "Waist under",
-      "1.6": "Chest under", "1.8": "Shoulders under", "2.0": "Head under"
-    }[val] || "");
+    { name: "Bow Screw", value: 20, clean: true, direction: "both", heli: true, category: "Oververtical" },
+    { name: "Stern Screw", value: 20, clean: true, direction: "both", heli: true, category: "Oververtical" },
+    { name: "Washout", value: 40, clean: true, direction: "both", heli: false, category: "Oververtical" },
+    { name: "One-Armed Bandit", value: 35, clean: true, direction: "both", heli: true, category: "Oververtical" },
+    { name: "Screwing Around", value: 100, clean: true, direction: "both", heli: false, category: "Oververtical" },
+    { name: "Changing Around", value: 120, clean: false, direction: "both", heli: false, category: "Oververtical" },
 
-	//Mystery Logic
-    function populateMysteryOptions() {
-      const select = document.getElementById("mysteryMultiplier");
-      for (let i = 0; i <= 10; i++) {
-        const val = (1 + i * 0.1).toFixed(1);
-        const opt = document.createElement("option");
-        opt.value = val;
-        opt.textContent = `${val} – ${depthDescription(val)}`;
-        select.appendChild(opt);
-      }
+    { name: "Switchwheel", value: 50, clean: false, direction: "both", heli: false, category: "Advanced" },
+    { name: "Split Wheel", value: 50, clean: true, direction: "both", heli: true, category: "Advanced" },
+    { name: "Tricky-Woo", value: 80, clean: true, direction: "both", heli: true, category: "Advanced" },
+    { name: "Woo-Tricky", value: 80, clean: true, direction: "both", heli: true, category: "Advanced" },
+
+    { name: "Party Trick", value: 30, clean: false, direction: "both", heli: false, category: "Misc" },
+    { name: "Zero to Hero", value: 40, clean: false, direction: "both", heli: false, category: "Misc" },
+    { name: "Loop", value: 60, clean: true, direction: "both", heli: true, category: "Misc" },
+
+    { name: "Trophy 1", value: 50, clean: false, direction: "both", heli: false, category: "Trophies" },
+    { name: "Trophy 2", value: 90, clean: false, direction: "both", heli: false, category: "Trophies" },
+    { name: "Trophy 3", value: 120, clean: false, direction: "both", heli: false, category: "Trophies" },
+
+    { name: "Mystery Exit 1", value: 20, clean: false, direction: "both", heli: false, category: "Mystery Exits" },
+    { name: "Mystery Exit 2", value: 40, clean: false, direction: "both", heli: false, category: "Mystery Exits" },
+    { name: "Mystery Exit 3", value: 90, clean: false, direction: "both", heli: false, category: "Mystery Exits" }
+  ]; //List of ICF Tricks and Applicability
+
+  const depthDescription = val => ({
+    "1.0": "No Mystery", "1.2": "Full boat under", "1.4": "Waist under",
+    "1.6": "Chest under", "1.8": "Shoulders under", "2.0": "Head under"
+  }[val] || ""); //Mystery Depth Guide
+
+  function populateMysteryOptions() {
+    const select = document.getElementById("mysteryMultiplier");
+    for (let i = 0; i <= 10; i++) {
+      const val = (1 + i * 0.1).toFixed(1);
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = `${val} – ${depthDescription(val)}`;
+      select.appendChild(opt);
     }
-	
-	//Calculation logic
-    function createRow(trick) {
-      const row = document.createElement('tr');
+  } //Mystery dropdown logic
+
+  function createRow(trick) {
+    const row = document.createElement('tr');
+    const dirs = trick.direction === "one" ? ["right"] : ["left", "right"];
+
+    const bonusCell = type => {
+      if (type === "heli" && !trick.heli) return "–";
+      if (!trick.clean && type !== "heli") return "–";
+      return dirs.map(dir =>
+        `<label class="flex items-center gap-1">
+          ${dir.charAt(0).toUpperCase() + dir.slice(1)}:
+          <input type="checkbox" data-bonus="${type}" data-name="${trick.name}" data-dir="${dir}" class="scale-125">
+        </label>`
+      ).join("<hr class='my-1' />");
+    }; //Heli bonus logic
+
+    row.innerHTML = `
+      <td class="border px-2 py-1 font-medium">${trick.name}</td>
+      ${dirs.map(dir => `
+        <td class="border px-2 py-1">
+          ${trick.direction !== "one" ? `<input type="checkbox" data-dir="${dir}" data-name="${trick.name}" class="scale-125">` : "✓"}
+        </td>
+      `).join("")}
+      <td class="border px-2 py-1">${bonusCell("clean")}</td>
+      <td class="border px-2 py-1">${bonusCell("superclean")}</td>
+      <td class="border px-2 py-1">${bonusCell("heli")}</td>
+      <td class="border px-2 py-1">${trick.value}</td>
+    `;
+    return row;
+  }
+
+  function renderGroupedTricks() {
+    const grouped = tricks.reduce((acc, trick) => {
+      acc[trick.category] = acc[trick.category] || [];
+      acc[trick.category].push(trick);
+      return acc;
+    }, {});
+    const table = document.getElementById("trickTable");
+    table.innerHTML = "";
+    Object.entries(grouped).forEach(([category, tricks]) => {
+      const header = document.createElement("tr");
+      header.innerHTML = `<td colspan="7" class="bg-blue-100 text-left px-2 py-1 font-semibold">${category}</td>`;
+      table.appendChild(header);
+      tricks.forEach(t => table.appendChild(createRow(t)));
+    });
+  }
+
+  function updateScore() {
+    let baseTotal = 0;
+    const summaryList = document.getElementById("summaryList");
+    summaryList.innerHTML = "";
+
+    tricks.forEach(trick => {
       const dirs = trick.direction === "one" ? ["right"] : ["left", "right"];
+      dirs.forEach(dir => {
+        const selected = trick.direction === "one" ? true :
+          document.querySelector(`input[data-dir="${dir}"][data-name="${trick.name}"]`)?.checked;
+        if (selected) {
+          const base = trick.value;
+          let score = base;
+          const clean = trick.clean ? document.querySelector(`input[data-bonus="clean"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked : false;
+          const superclean = trick.clean ? document.querySelector(`input[data-bonus="superclean"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked : false;
+          const heli = trick.heli ? document.querySelector(`input[data-bonus="heli"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked : false;
 
-      const bonusCell = type => {
-        if (!trick.clean && type !== "heli") return "–";
-        return dirs.map(dir =>
-          `<label class="flex items-center gap-1">
-             ${dir.charAt(0).toUpperCase() + dir.slice(1)}:
-             <input type="checkbox" data-bonus="${type}" data-name="${trick.name}" data-dir="${dir}" class="scale-125">
-           </label>`
-        ).join("<hr class='my-1' />");
-      };
-
-      row.innerHTML = `
-        <td title="${trick.desc || ""}" class="border px-2 py-1 font-medium">${trick.name}</td>
-        ${dirs.map(dir => `
-          <td class="border px-2 py-1">
-            ${trick.direction !== "one" ? `<input type="checkbox" data-dir="${dir}" data-name="${trick.name}" class="scale-125">` : "✓"}
-          </td>
-        `).join("")}
-        <td class="border px-2 py-1">${bonusCell("clean")}</td>
-        <td class="border px-2 py-1">${bonusCell("superclean")}</td>
-        <td class="border px-2 py-1">${bonusCell("heli")}</td>
-        <td class="border px-2 py-1">${trick.value}</td>
-      `;
-      return row;
-    }
-	
-	//Bonus logic
-    function updateScore() {
-      let baseTotal = 0;
-      const summaryList = document.getElementById("summaryList");
-      summaryList.innerHTML = "";
-
-      tricks.forEach(trick => {
-        const dirs = trick.direction === "one" ? ["right"] : ["left", "right"];
-        dirs.forEach(dir => {
-          const selected = trick.direction === "one" ? true :
-            document.querySelector(`input[data-dir="${dir}"][data-name="${trick.name}"]`)?.checked;
-          if (selected) {
-            const base = trick.value;
-            let score = base;
-            const clean = trick.clean ? document.querySelector(`input[data-bonus="clean"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked : false;
-            const superclean = trick.clean ? document.querySelector(`input[data-bonus="superclean"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked : false;
-            const heli = document.querySelector(`input[data-bonus="heli"][data-name="${trick.name}"][data-dir="${dir}"]`)?.checked;
-
-            if (clean && superclean) {
-              alert(`Warning: Both Clean and Superclean selected for ${trick.name} (${dir}). Only one can be applied.`);
-              return;
-            }
-
-            if (superclean) score = base * 3;
-            else if (clean) score = base * 2;
-            if (heli) score += base;
-
-            baseTotal += score;
-
-            const label = `${trick.name} (${dir}${clean ? " +Clean" : ""}${superclean ? " +Superclean" : ""}${heli ? " +Heli" : ""}) → ${score}`;
-            const li = document.createElement("li");
-            li.textContent = label;
-            summaryList.appendChild(li);
+          if (clean && superclean) {
+            alert(`Warning: Both Clean and Superclean selected for ${trick.name} (${dir}). Only one can be applied.`);
+            return;
           }
-        });
+
+          if (superclean) score = base * 3;
+          else if (clean) score = base * 2;
+          if (heli) score += base;
+
+          baseTotal += score;
+
+          const label = `${trick.name} (${dir}${clean ? " +Clean" : ""}${superclean ? " +Superclean" : ""}${heli ? " +Heli" : ""}) → ${score}`;
+          const li = document.createElement("li");
+          li.textContent = label;
+          summaryList.appendChild(li);
+        }
       });
-	  // Duration logic
+    }); //Update score function (biggest part of the application)
+
+    const multiplier = parseFloat(document.getElementById("mysteryMultiplier").value || "1.0");
+    let mushBonus = 0;
+
+    // Warning if seconds added but multiplier is not 2.0
+    if (multiplier !== 2.0) {
+      const hasMysteryTime = ["mysterySeconds1", "mysterySeconds2", "mysterySeconds3"]
+        .some(id => parseFloat(document.getElementById(id).value) > 0);
+      if (hasMysteryTime) {
+        alert("You've entered mystery/mush duration seconds, but haven't selected 2.0x depth. No bonus will be applied unless 2.0x is selected.");
+      }
+    } //validation for mystery 
+
+    if (multiplier === 2.0) {
       const durations = [
         parseFloat(document.getElementById("mysterySeconds1").value) || 0,
         parseFloat(document.getElementById("mysterySeconds2").value) || 0,
         parseFloat(document.getElementById("mysterySeconds3").value) || 0
       ].sort((a, b) => b - a);
-      const mushBonus = (durations[0] + durations[1]) * 20;
+      mushBonus = (durations[0] + durations[1]) * 20;
+    } //Mystery seconds logic
 
-      document.getElementById("baseScore").textContent = baseTotal;
-      document.getElementById("mushBonus").textContent = mushBonus;
+    document.getElementById("baseScore").textContent = baseTotal;
+    document.getElementById("mushBonus").textContent = mushBonus;
+    const finalScore = Math.round((baseTotal + mushBonus) * multiplier);
+    document.getElementById("finalScore").textContent = finalScore;
+  } //Display final score
 
-      const multiplier = parseFloat(document.getElementById("mysteryMultiplier").value || "1.0");
-      const finalScore = Math.round((baseTotal + mushBonus) * multiplier);
-      document.getElementById("finalScore").textContent = finalScore;
-    }
+  function resetForm() {
+    document.querySelectorAll('#rideForm input[type="checkbox"]').forEach(input => input.checked = false);
+    document.querySelectorAll('#rideForm input[type="number"]').forEach(input => input.value = '');
+    document.getElementById("mysteryMultiplier").value = "1.0";
+    document.getElementById("summaryList").innerHTML = "";
+    document.getElementById("baseScore").textContent = "0";
+    document.getElementById("mushBonus").textContent = "0";
+    document.getElementById("finalScore").textContent = "0";
+  } //Reset Button Logic
 
-    // Init
-    tricks.forEach(t => document.getElementById("trickTable").appendChild(createRow(t)));
-    populateMysteryOptions();
-    document.querySelectorAll('input, select').forEach(el => el.addEventListener('change', updateScore));
-  </script>
+  // Init
+  populateMysteryOptions();
+  renderGroupedTricks();
+  document.querySelectorAll('input, select').forEach(el => el.addEventListener('change', updateScore));
+  updateScore();
+</script>
+
+
+  <h1 class="text-sm font-semibold mb-6 text-center flex items-center justify-center gap-2">
+    © Anne Ruyters, Department of Civil and Environmental Engineering, University of Strathclyde
+  </h1>
 </body>
 </html>
